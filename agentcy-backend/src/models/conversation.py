@@ -10,8 +10,8 @@ class Conversation(db.Model):
     agent_response = db.Column(db.Text, nullable=False)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
 
-    # Relationship to associated uploaded documents/files
-    documents = db.relationship('Document', backref='conversation', lazy=True, cascade="all, delete-orphan")
+    # Relationship to associated uploaded files
+    files = db.relationship('File', backref='conversation', lazy=True, cascade="all, delete-orphan")
 
     def to_dict(self):
         return {
@@ -20,14 +20,14 @@ class Conversation(db.Model):
             'user_message': self.user_message,
             'agent_response': self.agent_response,
             'timestamp': self.timestamp.isoformat() if self.timestamp else None,
-            'files': [doc.to_dict() for doc in self.documents]
+            'files': [file.to_dict() for file in self.files]
         }
 
     def __repr__(self):
         return f'<Conversation {self.id}: {self.conversation_id}>'
 
-class Document(db.Model):
-    __tablename__ = 'documents'
+class File(db.Model):
+    __tablename__ = 'files'
 
     id = db.Column(db.Integer, primary_key=True)
     filename = db.Column(db.String(255), nullable=False)
@@ -44,4 +44,4 @@ class Document(db.Model):
         }
 
     def __repr__(self):
-        return f'<Document {self.id}: {self.filename}>'
+        return f'<File {self.id}: {self.filename}>'
