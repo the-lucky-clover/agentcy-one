@@ -25,7 +25,52 @@ AGENT_CAPABILITIES = {
     "file_upload": True
 }
 
-# ... keep your existing routes ...
+@agent_bp.route('/agent/capabilities', methods=['GET'])
+def get_capabilities():
+    return jsonify({
+        "capabilities": AGENT_CAPABILITIES,
+        "version": "1.1.0",
+        "name": "Agentcy.one AI Agent"
+    })
+
+@agent_bp.route('/agent/chat', methods=['POST'])
+def chat_with_agent():
+    data = request.json or {}
+    user_message = data.get('message', '').strip()
+    conversation_id = data.get('conversation_id') or str(uuid.uuid4())
+
+    if not user_message:
+        return jsonify({"error": "Message cannot be empty"}), 400
+
+    try:
+        routed_result = route_tool(user_message)
+        response_text = routed_result.get("message")
+        tools_used = routed_result.get("tools_used", [])
+    except Exception as e:
+        return jsonify({"error": f"AI routing error: {str(e)}"}), 500
+
+    response_payload = {
+        "message": response_text,
+        "conversation_id": conversation_id,
+        "timestamp": datetime.utcnow().isoformat(),
+        "tools_used": tools_used,
+        "status": "completed"
+    }
+
+    try:
+        conversation = Conversation(
+            conversation_id=conversation_id,
+            user_message=user_message,
+            agent_response=response_text,
+            timestamp=datetime.utcnow()
+        )
+        db.session.add(conversation)
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": f"Database error: {str(e)}"}), 500
+
+    return jsonify(response_payload)
 
 @agent_bp.route('/agent/upload', methods=['POST'])
 def upload_file():
@@ -84,4 +129,4 @@ def get_conversation_files(conversation_id):
     } for f in files]
     return jsonify(files_list)
 
-# ... keep your existing routes like /agent/chat, /agent/tasks, etc. ...
+# ... keep your other existing routes here, e.g., /agent/tasks, /agent/image, etc.
