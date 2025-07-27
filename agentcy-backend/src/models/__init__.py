@@ -1,6 +1,6 @@
 from flask_sqlalchemy import SQLAlchemy
 
-db = SQLAlchemy()  # Do NOT bind app here
+db = SQLAlchemy()  # ✅ Initialize without app — delay binding until later
 
 import os
 from flask import Flask
