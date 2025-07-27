@@ -52,7 +52,7 @@ def chat_with_agent():
     response_payload = {
         "message": response_text,
         "conversation_id": conversation_id,
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": datetime.utcnow().isoformat() + "Z"
         "tools_used": tools_used,
         "status": "completed"
     }
