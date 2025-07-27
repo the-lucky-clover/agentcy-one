@@ -1,6 +1,6 @@
 import os
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from flask import Blueprint, jsonify, request, current_app, send_from_directory, abort
 from werkzeug.utils import secure_filename
 from src.models.task import Task
@@ -15,6 +15,9 @@ ALLOWED_EXTENSIONS = {'pdf', 'png', 'jpg', 'jpeg', 'gif'}
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+def utcnow():
+    return datetime.now(timezone.utc).replace(microsecond=0)
 
 AGENT_CAPABILITIES = {
     "text_generation": True,
@@ -48,7 +51,7 @@ def chat_with_agent():
     except Exception as e:
         return jsonify({"error": f"AI routing error: {str(e)}"}), 500
 
-    timestamp_utc = datetime.utcnow().replace(microsecond=0).isoformat() + "Z"
+    timestamp_utc = utcnow().isoformat().replace('+00:00', 'Z')
 
     response_payload = {
         "message": response_text,
@@ -63,7 +66,7 @@ def chat_with_agent():
             conversation_id=conversation_id,
             user_message=user_message,
             agent_response=response_text,
-            timestamp=datetime.utcnow()
+            timestamp=utcnow()
         )
         db.session.add(conversation)
         db.session.commit()
@@ -102,13 +105,12 @@ def upload_file():
                 conversation_id=conversation_id,
                 filename=unique_filename,
                 filepath=filepath,
-                uploaded_at=datetime.utcnow()
+                uploaded_at=utcnow()
             )
             db.session.add(file_record)
             db.session.commit()
         except Exception as e:
             db.session.rollback()
-            # Delete file from disk if db save fails
             if os.path.exists(filepath):
                 os.remove(filepath)
             return jsonify({"error": f"Database error saving file: {str(e)}"}), 500
@@ -132,7 +134,7 @@ def get_conversation_files(conversation_id):
         "id": f.id,
         "filename": f.filename,
         "filepath": f.filepath,
-        "uploaded_at": f.uploaded_at.replace(microsecond=0).isoformat() + 'Z' if f.uploaded_at else None
+        "uploaded_at": f.uploaded_at.replace(microsecond=0).isoformat().replace('+00:00', 'Z') if f.uploaded_at else None
     } for f in files]
     return jsonify(files_list)
 
@@ -145,7 +147,6 @@ def download_file(file_id):
 
     upload_folder = os.path.abspath(current_app.config.get('UPLOAD_FOLDER', 'uploads'))
 
-    # Prevent path traversal attacks by ensuring file is within upload folder
     if not directory.startswith(upload_folder):
         abort(403, description="Access to this file is forbidden.")
 
@@ -153,5 +154,3 @@ def download_file(file_id):
         return send_from_directory(directory=directory, path=filename, as_attachment=True)
     except FileNotFoundError:
         abort(404, description="File not found on server.")
-
-# Add your other agent routes below as needed
