@@ -14,3 +14,4 @@ class DevConfig(BaseConfig):
 class ProdConfig(BaseConfig):
     SECRET_KEY = os.environ.get('SECRET_KEY', 'super-secret')
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL', f"sqlite:///{os.path.join(basedir, 'src', 'database', 'prod.db')}")
+
