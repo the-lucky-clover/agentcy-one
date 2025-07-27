@@ -26,6 +26,6 @@ def create_app():
     from src.agent import agent_bp
     app.register_blueprint(agent_bp)
 
-    # You can import other blueprints similarly
+    # Import and register other blueprints as needed
 
     return app
