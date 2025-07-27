@@ -10,7 +10,8 @@ pip install -r requirements.txt
 
 # Build React frontend
 echo "Building React frontend..."
-cd ../agentcy-frontend
+cd /
+cd agentcy-frontend
 npm install
 npm run build
 
@@ -20,7 +21,8 @@ rm -rf ../agentcy-backend/src/static/*
 cp -r dist/* ../agentcy-backend/src/static/
 
 # Return to backend directory
-cd ../agentcy-backend
+cd /
+cd agentcy-backend
 
 echo "Build process completed successfully!"
 
