@@ -1,6 +1,6 @@
 from flask import Blueprint, jsonify, request
 from src.models.task import Task
-from . import db  # ✅ Reuse the global instance
+from src.models import db
 from src.models.conversation import Conversation
 import json
 import time
