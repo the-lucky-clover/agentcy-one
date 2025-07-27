@@ -23,4 +23,3 @@ cp -r dist/* ../agentcy-backend/src/static/
 cd ../agentcy-backend
 
 echo "Build process completed successfully!"
-
