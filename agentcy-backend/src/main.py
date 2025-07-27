@@ -1,5 +1,6 @@
 import os
 import sys
+
 # DON'T CHANGE THIS !!!
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
@@ -17,6 +18,7 @@ app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'your-secret-key-here')
 # Enable CORS for all routes
 CORS(app)
 
+# Register blueprints with URL prefixes
 app.register_blueprint(user_bp, url_prefix='/api')
 app.register_blueprint(agent_bp, url_prefix='/api')
 
@@ -25,11 +27,13 @@ database_url = os.environ.get('DATABASE_URL')
 if database_url:
     app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 else:
-    app.config['SQLALCHEMY_DATABASE_URI'] = f"sqlite:///{os.path.join(os.path.dirname(__file__), 'database', 'app.db')}"
+    db_path = os.path.join(os.path.dirname(__file__), 'database', 'app.db')
+    app.config['SQLALCHEMY_DATABASE_URI'] = f"sqlite:///{db_path}"
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-db.init_app(app)
 
+# Initialize DB with app context
+db.init_app(app)
 with app.app_context():
     db.create_all()
 
@@ -40,7 +44,8 @@ def serve(path):
     if static_folder_path is None:
         return "Static folder not configured", 404
 
-    if path != "" and os.path.exists(os.path.join(static_folder_path, path)):
+    requested_path = os.path.join(static_folder_path, path)
+    if path and os.path.exists(requested_path):
         return send_from_directory(static_folder_path, path)
     else:
         index_path = os.path.join(static_folder_path, 'index.html')
