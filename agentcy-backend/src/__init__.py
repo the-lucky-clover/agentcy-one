@@ -8,7 +8,7 @@ from src.routes.agent import agent_bp  # ✅ updated to match your actual file s
 def create_app(config_class=None):
     app = Flask(__name__, static_folder=os.path.join(os.path.dirname(__file__), 'static'))
 
-    # Load configuration from config.py
+    # Load configuration from config.py or passed config_class
     if config_class:
         app.config.from_object(config_class)
     else:
@@ -24,13 +24,12 @@ def create_app(config_class=None):
     # Initialize extensions
     db.init_app(app)
 
-    # Register blueprints
+    # Register blueprints with URL prefixes
     app.register_blueprint(user_bp, url_prefix='/api')
     app.register_blueprint(agent_bp, url_prefix='/api')
 
-    # Create database tables
+    # Create database tables if not exist
     with app.app_context():
         db.create_all()
 
     return app
-
