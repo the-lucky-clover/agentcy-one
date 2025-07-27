@@ -1,6 +1,9 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from src.models import db  # Shared instance
 from src.models.file import File  # Import File model from its module
+
+def utcnow():
+    return datetime.now(timezone.utc)
 
 class Conversation(db.Model):
     __tablename__ = 'conversations'
@@ -9,7 +12,8 @@ class Conversation(db.Model):
     conversation_id = db.Column(db.String(100), nullable=False, index=True)
     user_message = db.Column(db.Text, nullable=False)
     agent_response = db.Column(db.Text, nullable=False)
-    timestamp = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    # Make timestamp timezone-aware and default to UTC now
+    timestamp = db.Column(db.DateTime(timezone=True), nullable=False, default=utcnow)
 
     # Relationship to associated uploaded files
     files = db.relationship('File', backref='conversation', lazy=True, cascade="all, delete-orphan")
@@ -20,8 +24,8 @@ class Conversation(db.Model):
             'conversation_id': self.conversation_id,
             'user_message': self.user_message,
             'agent_response': self.agent_response,
-            # Fix timestamp for frontend JS parsing
-            'timestamp': self.timestamp.replace(microsecond=0).isoformat() + 'Z' if self.timestamp else None,
+            # ISO 8601 UTC timestamp without microseconds, with 'Z' suffix
+            'timestamp': self.timestamp.replace(microsecond=0).isoformat().replace('+00:00', 'Z') if self.timestamp else None,
             'files': [file.to_dict() for file in self.files]
         }
 
