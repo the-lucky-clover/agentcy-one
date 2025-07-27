@@ -1,6 +1,6 @@
 from flask import Blueprint, jsonify, request
 from src.models.task import Task
-from . import db  # ✅ Reuse the global instance
+from src.models import db
 user_bp = Blueprint('user', __name__)
 
 @user_bp.route('/users', methods=['GET'])
