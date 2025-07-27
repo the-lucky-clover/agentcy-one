@@ -2,37 +2,40 @@ import os
 from flask import Flask
 from flask_cors import CORS
 from src.models import db
-from src.agent import agent_bp  # Import your blueprints here
-from src.routes.user import user_bp  # Example user blueprint if any
+from src.agent import agent_bp
+from src.routes.user import user_bp
 
 def create_app():
     app = Flask(__name__)
 
-    # Set config before init db
+    # Database configuration
     database_url = os.environ.get('DATABASE_URL')
     if database_url:
         app.config['SQLALCHEMY_DATABASE_URI'] = database_url
     else:
-        # Use sqlite database path relative to this file
-        app.config['SQLALCHEMY_DATABASE_URI'] = f"sqlite:///{os.path.join(os.path.dirname(__file__), 'database', 'app.db')}"
+        db_path = os.path.join(os.path.dirname(__file__), 'database', 'app.db')
+        os.makedirs(os.path.dirname(db_path), exist_ok=True)
+        app.config['SQLALCHEMY_DATABASE_URI'] = f"sqlite:///{db_path}"
 
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-    # Upload config
-    app.config['UPLOAD_FOLDER'] = os.path.join(os.path.dirname(__file__), 'uploads')
-    os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
-    app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024  # 50MB max upload
+    # Uploads configuration
+    upload_dir = os.path.join(os.path.dirname(__file__), 'uploads')
+    os.makedirs(upload_dir, exist_ok=True)
+    app.config['UPLOAD_FOLDER'] = upload_dir
+    app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024  # 50MB
 
+    # Enable CORS
     CORS(app)
 
-    # Initialize extensions with app
+    # Initialize extensions
     db.init_app(app)
 
     # Register blueprints
     app.register_blueprint(agent_bp, url_prefix='/api')
     app.register_blueprint(user_bp, url_prefix='/api')
 
-    # Create tables (make sure you have models imported somewhere so they register)
+    # Create database tables
     with app.app_context():
         db.create_all()
 
