@@ -1,5 +1,7 @@
 from flask_sqlalchemy import SQLAlchemy
-db = SQLAlchemy()  # No app passed here
+
+db = SQLAlchemy()  # Do NOT bind app here
+
 import os
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
