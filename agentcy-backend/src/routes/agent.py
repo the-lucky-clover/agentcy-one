@@ -1,5 +1,6 @@
 from flask import Blueprint, jsonify, request
-from src.models.task import Task, db
+from src.models.task import Task
+from src.models.user import db  # ✅ Single source of db
 from src.models.conversation import Conversation
 import json
 import time
