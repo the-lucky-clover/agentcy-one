@@ -2,86 +2,56 @@ from flask import Blueprint, jsonify, request
 from src.models.task import Task
 from src.models import db
 from src.models.conversation import Conversation
-import time
-import uuid
 from datetime import datetime
+from src.ai.gemini import get_ai_response, generate_image, plan_task, route_tool
+import uuid
 
 agent_bp = Blueprint('agent', __name__)
 
-# Simulated AI agent capabilities
 AGENT_CAPABILITIES = {
     "text_generation": True,
-    "code_execution": True,
-    "web_search": True,
-    "file_operations": True,
     "image_generation": True,
-    "data_analysis": True,
-    "task_planning": True
+    "task_planning": True,
+    "tool_routing": True
 }
-
-# Simulated tool responses
-def simulate_tool_execution(tool_name, parameters):
-    """Simulate tool execution with realistic responses"""
-    responses = {
-        "web_search": {
-            "results": [
-                {"title": "Sample Search Result", "url": "https://example.com", "snippet": "This is a sample search result."}
-            ]
-        },
-        "code_execution": {
-            "output": "Code executed successfully",
-            "status": "success"
-        },
-        "file_operations": {
-            "status": "File operation completed",
-            "path": "/tmp/example.txt"
-        },
-        "image_generation": {
-            "image_url": "https://via.placeholder.com/400x300",
-            "status": "Image generated successfully"
-        }
-    }
-    return responses.get(tool_name, {"status": "Tool executed", "result": "Generic response"})
 
 @agent_bp.route('/agent/capabilities', methods=['GET'])
 def get_capabilities():
-    """Get agent capabilities"""
     return jsonify({
         "capabilities": AGENT_CAPABILITIES,
-        "version": "1.0.0",
+        "version": "1.1.0",
         "name": "Agentcy.one AI Agent"
     })
 
 @agent_bp.route('/agent/chat', methods=['POST'])
 def chat_with_agent():
-    """Main chat endpoint for interacting with the AI agent"""
     data = request.json or {}
+    user_message = data.get('message', '').strip()
+    conversation_id = data.get('conversation_id') or str(uuid.uuid4())
 
-    user_message = data.get('message', '')
-    conversation_id = data.get('conversation_id')
+    if not user_message:
+        return jsonify({"error": "Message cannot be empty"}), 400
 
-    # Generate a new UUID if conversation_id is missing or empty or None
-    if not conversation_id:
-        conversation_id = str(uuid.uuid4())
+    try:
+        routed_result = route_tool(user_message)
+        response_text = routed_result.get("message")
+        tools_used = routed_result.get("tools_used", [])
+    except Exception as e:
+        return jsonify({"error": f"AI routing error: {str(e)}"}), 500
 
-    # Simulate AI processing time
-    time.sleep(1)
-
-    # Create a simulated agent response
-    agent_response = {
-        "message": f"I understand you want me to: {user_message}. Let me help you with that.",
+    response_payload = {
+        "message": response_text,
         "conversation_id": conversation_id,
         "timestamp": datetime.utcnow().isoformat(),
-        "tools_used": [],
+        "tools_used": tools_used,
         "status": "completed"
     }
 
-    # Save conversation to database safely
     try:
         conversation = Conversation(
             conversation_id=conversation_id,
             user_message=user_message,
-            agent_response=agent_response["message"],
+            agent_response=response_text,
             timestamp=datetime.utcnow()
         )
         db.session.add(conversation)
@@ -90,38 +60,15 @@ def chat_with_agent():
         db.session.rollback()
         return jsonify({"error": f"Database error: {str(e)}"}), 500
 
-    return jsonify(agent_response)
-
-@agent_bp.route('/agent/execute-tool', methods=['POST'])
-def execute_tool():
-    """Execute a specific tool with parameters"""
-    data = request.json or {}
-    tool_name = data.get('tool_name')
-    parameters = data.get('parameters', {})
-
-    if not tool_name:
-        return jsonify({"error": "Tool name is required"}), 400
-
-    # Simulate tool execution
-    result = simulate_tool_execution(tool_name, parameters)
-
-    return jsonify({
-        "tool_name": tool_name,
-        "parameters": parameters,
-        "result": result,
-        "timestamp": datetime.utcnow().isoformat(),
-        "status": "success"
-    })
+    return jsonify(response_payload)
 
 @agent_bp.route('/agent/tasks', methods=['GET'])
 def get_tasks():
-    """Get all tasks"""
     tasks = Task.query.all()
     return jsonify([task.to_dict() for task in tasks])
 
 @agent_bp.route('/agent/tasks', methods=['POST'])
 def create_task():
-    """Create a new task"""
     data = request.json or {}
     task = Task(
         title=data.get('title', ''),
@@ -133,52 +80,49 @@ def create_task():
     db.session.commit()
     return jsonify(task.to_dict()), 201
 
-@agent_bp.route('/agent/tasks/<int:task_id>', methods=['GET'])
-def get_task(task_id):
-    """Get a specific task"""
-    task = Task.query.get_or_404(task_id)
-    return jsonify(task.to_dict())
-
-@agent_bp.route('/agent/tasks/<int:task_id>', methods=['PUT'])
-def update_task(task_id):
-    """Update a task"""
-    task = Task.query.get_or_404(task_id)
+@agent_bp.route('/agent/tasks/plan', methods=['POST'])
+def plan_task_route():
     data = request.json or {}
+    prompt = data.get("prompt", "").strip()
 
-    task.title = data.get('title', task.title)
-    task.description = data.get('description', task.description)
-    task.status = data.get('status', task.status)
-    task.updated_at = datetime.utcnow()
+    if not prompt:
+        return jsonify({"error": "Prompt is required for task planning"}), 400
 
-    db.session.commit()
-    return jsonify(task.to_dict())
+    try:
+        steps = plan_task(prompt)
+        return jsonify({"plan": steps, "status": "success"})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
-@agent_bp.route('/agent/tasks/<int:task_id>', methods=['DELETE'])
-def delete_task(task_id):
-    """Delete a task"""
-    task = Task.query.get_or_404(task_id)
-    db.session.delete(task)
-    db.session.commit()
-    return '', 204
+@agent_bp.route('/agent/image', methods=['POST'])
+def generate_image_route():
+    data = request.json or {}
+    prompt = data.get("prompt", "").strip()
+
+    if not prompt:
+        return jsonify({"error": "Prompt is required"}), 400
+
+    try:
+        image_url = generate_image(prompt)
+        return jsonify({"image_url": image_url})
+    except Exception as e:
+        return jsonify({"error": f"Image generation failed: {str(e)}"}), 500
 
 @agent_bp.route('/agent/conversations', methods=['GET'])
 def get_conversations():
-    """Get conversation history"""
     conversations = Conversation.query.order_by(Conversation.timestamp.desc()).limit(50).all()
     return jsonify([conv.to_dict() for conv in conversations])
 
 @agent_bp.route('/agent/conversations/<conversation_id>', methods=['GET'])
 def get_conversation(conversation_id):
-    """Get specific conversation"""
     conversations = Conversation.query.filter_by(conversation_id=conversation_id).order_by(Conversation.timestamp.asc()).all()
     return jsonify([conv.to_dict() for conv in conversations])
 
 @agent_bp.route('/agent/health', methods=['GET'])
 def health_check():
-    """Health check endpoint"""
     return jsonify({
         "status": "healthy",
         "timestamp": datetime.utcnow().isoformat(),
-        "version": "1.0.0",
+        "version": "1.1.0",
         "service": "Agentcy.one AI Agent"
     })
