@@ -2,7 +2,6 @@ from flask import Blueprint, jsonify, request
 from src.models.task import Task
 from src.models import db
 from src.models.conversation import Conversation
-import json
 import time
 import uuid
 from datetime import datetime
@@ -56,13 +55,18 @@ def get_capabilities():
 @agent_bp.route('/agent/chat', methods=['POST'])
 def chat_with_agent():
     """Main chat endpoint for interacting with the AI agent"""
-    data = request.json
+    data = request.json or {}
+
     user_message = data.get('message', '')
-    conversation_id = data.get('conversation_id', str(uuid.uuid4()))
-    
+    conversation_id = data.get('conversation_id')
+
+    # Generate a new UUID if conversation_id is missing or empty or None
+    if not conversation_id:
+        conversation_id = str(uuid.uuid4())
+
     # Simulate AI processing time
     time.sleep(1)
-    
+
     # Create a simulated agent response
     agent_response = {
         "message": f"I understand you want me to: {user_message}. Let me help you with that.",
@@ -71,32 +75,36 @@ def chat_with_agent():
         "tools_used": [],
         "status": "completed"
     }
-    
-    # Save conversation to database
-    conversation = Conversation(
-        conversation_id=conversation_id,
-        user_message=user_message,
-        agent_response=agent_response["message"],
-        timestamp=datetime.utcnow()
-    )
-    db.session.add(conversation)
-    db.session.commit()
-    
+
+    # Save conversation to database safely
+    try:
+        conversation = Conversation(
+            conversation_id=conversation_id,
+            user_message=user_message,
+            agent_response=agent_response["message"],
+            timestamp=datetime.utcnow()
+        )
+        db.session.add(conversation)
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": f"Database error: {str(e)}"}), 500
+
     return jsonify(agent_response)
 
 @agent_bp.route('/agent/execute-tool', methods=['POST'])
 def execute_tool():
     """Execute a specific tool with parameters"""
-    data = request.json
+    data = request.json or {}
     tool_name = data.get('tool_name')
     parameters = data.get('parameters', {})
-    
+
     if not tool_name:
         return jsonify({"error": "Tool name is required"}), 400
-    
+
     # Simulate tool execution
     result = simulate_tool_execution(tool_name, parameters)
-    
+
     return jsonify({
         "tool_name": tool_name,
         "parameters": parameters,
@@ -114,9 +122,9 @@ def get_tasks():
 @agent_bp.route('/agent/tasks', methods=['POST'])
 def create_task():
     """Create a new task"""
-    data = request.json
+    data = request.json or {}
     task = Task(
-        title=data['title'],
+        title=data.get('title', ''),
         description=data.get('description', ''),
         status='pending',
         created_at=datetime.utcnow()
@@ -135,13 +143,13 @@ def get_task(task_id):
 def update_task(task_id):
     """Update a task"""
     task = Task.query.get_or_404(task_id)
-    data = request.json
-    
+    data = request.json or {}
+
     task.title = data.get('title', task.title)
     task.description = data.get('description', task.description)
     task.status = data.get('status', task.status)
     task.updated_at = datetime.utcnow()
-    
+
     db.session.commit()
     return jsonify(task.to_dict())
 
@@ -174,4 +182,3 @@ def health_check():
         "version": "1.0.0",
         "service": "Agentcy.one AI Agent"
     })
-
