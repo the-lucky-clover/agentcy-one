@@ -16,7 +16,8 @@ class Conversation(db.Model):
             "conversation_id": self.conversation_id,
             "user_message": self.user_message,
             "agent_response": self.agent_response,
-            "timestamp": self.timestamp.isoformat() if self.timestamp else None
+            # ✅ Truncate microseconds and add 'Z' for ISO 8601 UTC compatibility
+            "timestamp": self.timestamp.replace(microsecond=0).isoformat() + 'Z' if self.timestamp else None
         }
 
     def __repr__(self):
