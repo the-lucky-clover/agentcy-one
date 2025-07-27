@@ -1,17 +1,16 @@
 import os
+import uuid
+from datetime import datetime
 from flask import Blueprint, jsonify, request, current_app, send_from_directory, abort
 from werkzeug.utils import secure_filename
 from src.models.task import Task
 from src.models import db
 from src.models.conversation import Conversation
-from src.models.file import File  # You need to create this model
-from datetime import datetime
+from src.models.file import File  # Make sure this model exists and is correct
 from src.ai.gemini import get_ai_response, generate_image, plan_task, route_tool
-import uuid
 
 agent_bp = Blueprint('agent', __name__)
 
-# Allowed extensions for uploads (adjust as needed)
 ALLOWED_EXTENSIONS = {'pdf', 'png', 'jpg', 'jpeg', 'gif'}
 
 def allowed_file(filename):
@@ -49,10 +48,12 @@ def chat_with_agent():
     except Exception as e:
         return jsonify({"error": f"AI routing error: {str(e)}"}), 500
 
+    timestamp_utc = datetime.utcnow().replace(microsecond=0).isoformat() + "Z"
+
     response_payload = {
         "message": response_text,
         "conversation_id": conversation_id,
-        "timestamp": datetime.utcnow().isoformat() + "Z",  # Added "Z" for explicit UTC
+        "timestamp": timestamp_utc,
         "tools_used": tools_used,
         "status": "completed"
     }
@@ -88,14 +89,14 @@ def upload_file():
         upload_folder = current_app.config.get('UPLOAD_FOLDER', 'uploads')
         os.makedirs(upload_folder, exist_ok=True)
 
-        # To avoid collisions, prepend UUID to filename
         unique_filename = f"{uuid.uuid4()}_{filename}"
         filepath = os.path.join(upload_folder, unique_filename)
         
-        # Save file to disk
-        file.save(filepath)
+        try:
+            file.save(filepath)
+        except Exception as e:
+            return jsonify({"error": f"Failed to save file: {str(e)}"}), 500
 
-        # Save file record linked to conversation
         try:
             file_record = File(
                 conversation_id=conversation_id,
@@ -107,6 +108,9 @@ def upload_file():
             db.session.commit()
         except Exception as e:
             db.session.rollback()
+            # Delete file from disk if db save fails
+            if os.path.exists(filepath):
+                os.remove(filepath)
             return jsonify({"error": f"Database error saving file: {str(e)}"}), 500
 
         return jsonify({
@@ -128,7 +132,7 @@ def get_conversation_files(conversation_id):
         "id": f.id,
         "filename": f.filename,
         "filepath": f.filepath,
-        "uploaded_at": f.uploaded_at.isoformat()
+        "uploaded_at": f.uploaded_at.replace(microsecond=0).isoformat() + 'Z' if f.uploaded_at else None
     } for f in files]
     return jsonify(files_list)
 
@@ -136,14 +140,13 @@ def get_conversation_files(conversation_id):
 def download_file(file_id):
     file_record = File.query.get_or_404(file_id)
 
-    directory = os.path.dirname(file_record.filepath)
+    directory = os.path.dirname(os.path.abspath(file_record.filepath))
     filename = os.path.basename(file_record.filepath)
 
     upload_folder = os.path.abspath(current_app.config.get('UPLOAD_FOLDER', 'uploads'))
-    abs_directory = os.path.abspath(directory)
 
-    # Prevent path traversal attacks
-    if not abs_directory.startswith(upload_folder):
+    # Prevent path traversal attacks by ensuring file is within upload folder
+    if not directory.startswith(upload_folder):
         abort(403, description="Access to this file is forbidden.")
 
     try:
@@ -151,4 +154,4 @@ def download_file(file_id):
     except FileNotFoundError:
         abort(404, description="File not found on server.")
 
-# ... keep your other existing routes here, e.g., /agent/tasks, /agent/image, etc.
+# Add your other agent routes below as needed
