@@ -5,10 +5,10 @@ class File(db.Model):
     __tablename__ = 'files'
 
     id = db.Column(db.Integer, primary_key=True)
-    conversation_id = db.Column(db.String(100), nullable=False, index=True)
+    conversation_id = db.Column(db.String(100), db.ForeignKey('conversations.conversation_id'), nullable=False, index=True)
     filename = db.Column(db.String(255), nullable=False)
     filepath = db.Column(db.String(500), nullable=False)
-    uploaded_at = db.Column(db.DateTime, default=datetime.utcnow)
+    uploaded_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
 
     def to_dict(self):
         return {
@@ -20,4 +20,4 @@ class File(db.Model):
         }
 
     def __repr__(self):
-        return f"<File {self.id} {self.filename}>"
+        return f'<File {self.id} - {self.filename}>'
