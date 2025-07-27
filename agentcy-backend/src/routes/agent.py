@@ -44,7 +44,7 @@ def chat_with_agent():
 
     try:
         routed_result = route_tool(user_message)
-        response_text = routed_result.get("message")
+        response_text = routed_result.get("message") or "Sorry, I didn't understand that."
         tools_used = routed_result.get("tools_used", [])
     except Exception as e:
         return jsonify({"error": f"AI routing error: {str(e)}"}), 500
@@ -52,7 +52,7 @@ def chat_with_agent():
     response_payload = {
         "message": response_text,
         "conversation_id": conversation_id,
-        "timestamp": datetime.utcnow().isoformat() + "Z"
+        "timestamp": datetime.utcnow().isoformat() + "Z",  # Added "Z" for explicit UTC
         "tools_used": tools_used,
         "status": "completed"
     }
@@ -88,7 +88,7 @@ def upload_file():
         upload_folder = current_app.config.get('UPLOAD_FOLDER', 'uploads')
         os.makedirs(upload_folder, exist_ok=True)
 
-        # To avoid collisions, you can prepend UUID to filename
+        # To avoid collisions, prepend UUID to filename
         unique_filename = f"{uuid.uuid4()}_{filename}"
         filepath = os.path.join(upload_folder, unique_filename)
         
