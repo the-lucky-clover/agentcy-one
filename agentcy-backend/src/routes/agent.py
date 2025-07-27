@@ -1,5 +1,5 @@
 import os
-from flask import Blueprint, jsonify, request, current_app
+from flask import Blueprint, jsonify, request, current_app, send_from_directory, abort
 from werkzeug.utils import secure_filename
 from src.models.task import Task
 from src.models import db
@@ -87,7 +87,10 @@ def upload_file():
         filename = secure_filename(file.filename)
         upload_folder = current_app.config.get('UPLOAD_FOLDER', 'uploads')
         os.makedirs(upload_folder, exist_ok=True)
-        filepath = os.path.join(upload_folder, filename)
+
+        # To avoid collisions, you can prepend UUID to filename
+        unique_filename = f"{uuid.uuid4()}_{filename}"
+        filepath = os.path.join(upload_folder, unique_filename)
         
         # Save file to disk
         file.save(filepath)
@@ -96,7 +99,7 @@ def upload_file():
         try:
             file_record = File(
                 conversation_id=conversation_id,
-                filename=filename,
+                filename=unique_filename,
                 filepath=filepath,
                 uploaded_at=datetime.utcnow()
             )
@@ -111,7 +114,7 @@ def upload_file():
             "conversation_id": conversation_id,
             "file": {
                 "id": file_record.id,
-                "filename": filename,
+                "filename": unique_filename,
                 "filepath": filepath
             }
         })
@@ -128,5 +131,24 @@ def get_conversation_files(conversation_id):
         "uploaded_at": f.uploaded_at.isoformat()
     } for f in files]
     return jsonify(files_list)
+
+@agent_bp.route('/agent/files/<int:file_id>/download', methods=['GET'])
+def download_file(file_id):
+    file_record = File.query.get_or_404(file_id)
+
+    directory = os.path.dirname(file_record.filepath)
+    filename = os.path.basename(file_record.filepath)
+
+    upload_folder = os.path.abspath(current_app.config.get('UPLOAD_FOLDER', 'uploads'))
+    abs_directory = os.path.abspath(directory)
+
+    # Prevent path traversal attacks
+    if not abs_directory.startswith(upload_folder):
+        abort(403, description="Access to this file is forbidden.")
+
+    try:
+        return send_from_directory(directory=directory, path=filename, as_attachment=True)
+    except FileNotFoundError:
+        abort(404, description="File not found on server.")
 
 # ... keep your other existing routes here, e.g., /agent/tasks, /agent/image, etc.
