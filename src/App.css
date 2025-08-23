@@ -1,0 +1,438 @@
+@import 'tailwindcss/base';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
+@import 'tw-animate-css';
+
+/* Military-themed dark styling */
+:root {
+  --tactical-green: #00ff41;
+  --tactical-green-dark: #00cc33;
+  --tactical-amber: #ffb000;
+  --tactical-red: #ff4444;
+  --tactical-blue: #0099ff;
+  --dark-bg: #0a0a0a;
+  --dark-surface: #1a1a1a;
+  --dark-border: #333333;
+  --dark-text: #e0e0e0;
+  --dark-text-secondary: #b0b0b0;
+}
+
+body {
+  background-color: var(--dark-bg);
+  color: var(--dark-text);
+  font-family: 'Courier New', monospace;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+}
+
+.military-container {
+  background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
+  min-height: 100vh;
+  position: relative;
+}
+
+.military-container::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    radial-gradient(circle at 20% 80%, rgba(0, 255, 65, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(0, 255, 65, 0.05) 0%, transparent 50%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.tactical-header {
+  background: rgba(26, 26, 26, 0.95);
+  border-bottom: 2px solid var(--tactical-green);
+  backdrop-filter: blur(10px);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.tactical-logo {
+  color: var(--tactical-green);
+  font-weight: bold;
+  font-size: 1.5rem;
+  text-shadow: 0 0 10px var(--tactical-green);
+}
+
+.command-center-badge {
+  background: rgba(0, 255, 65, 0.2);
+  border: 1px solid var(--tactical-green);
+  color: var(--tactical-green);
+  padding: 0.25rem 0.75rem;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.threat-level {
+  color: var(--tactical-amber);
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.mission-interface {
+  background: rgba(0, 255, 65, 0.1);
+  border: 2px solid var(--tactical-green);
+  border-radius: 0.5rem;
+  backdrop-filter: blur(5px);
+  position: relative;
+  overflow: hidden;
+}
+
+.mission-interface::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--tactical-green), transparent);
+  animation: scan 2s linear infinite;
+}
+
+@keyframes scan {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.mission-textarea {
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(0, 255, 65, 0.3);
+  color: var(--tactical-green);
+  font-family: 'Courier New', monospace;
+  resize: none;
+  transition: all 0.3s ease;
+}
+
+.mission-textarea:focus {
+  border-color: var(--tactical-green);
+  box-shadow: 0 0 20px rgba(0, 255, 65, 0.3);
+  outline: none;
+}
+
+.mission-textarea::placeholder {
+  color: rgba(0, 255, 65, 0.5);
+}
+
+.execute-button {
+  background: linear-gradient(135deg, var(--tactical-green-dark), var(--tactical-green));
+  border: none;
+  color: #000;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.execute-button:hover {
+  background: linear-gradient(135deg, var(--tactical-green), var(--tactical-green-dark));
+  box-shadow: 0 0 30px rgba(0, 255, 65, 0.5);
+  transform: translateY(-2px);
+}
+
+.execute-button:active {
+  transform: translateY(0);
+}
+
+.execute-button.processing {
+  background: linear-gradient(135deg, #666, #888);
+  cursor: not-allowed;
+}
+
+.quick-action-button {
+  background: rgba(0, 0, 0, 0.7);
+  border: 1px solid var(--tactical-green);
+  color: var(--tactical-green);
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.quick-action-button:hover {
+  background: rgba(0, 255, 65, 0.1);
+  box-shadow: 0 0 20px rgba(0, 255, 65, 0.3);
+  transform: translateY(-1px);
+}
+
+.quick-action-button.intel {
+  border-color: var(--tactical-amber);
+  color: var(--tactical-amber);
+}
+
+.quick-action-button.intel:hover {
+  background: rgba(255, 176, 0, 0.1);
+  box-shadow: 0 0 20px rgba(255, 176, 0, 0.3);
+}
+
+.quick-action-button.tactical {
+  border-color: var(--tactical-blue);
+  color: var(--tactical-blue);
+}
+
+.quick-action-button.tactical:hover {
+  background: rgba(0, 153, 255, 0.1);
+  box-shadow: 0 0 20px rgba(0, 153, 255, 0.3);
+}
+
+.quick-action-button.threat {
+  border-color: var(--tactical-red);
+  color: var(--tactical-red);
+}
+
+.quick-action-button.threat:hover {
+  background: rgba(255, 68, 68, 0.1);
+  box-shadow: 0 0 20px rgba(255, 68, 68, 0.3);
+}
+
+.status-panel {
+  background: rgba(26, 26, 26, 0.9);
+  border: 1px solid var(--dark-border);
+  border-radius: 0.5rem;
+  backdrop-filter: blur(10px);
+}
+
+.status-panel h3 {
+  color: var(--tactical-green);
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 1rem;
+}
+
+.operation-item {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.25rem;
+  padding: 1rem;
+  margin-bottom: 0.75rem;
+  transition: all 0.3s ease;
+}
+
+.operation-item:hover {
+  border-color: var(--tactical-green);
+  background: rgba(0, 255, 65, 0.05);
+}
+
+.operation-status {
+  font-size: 0.75rem;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.operation-status.active {
+  color: var(--tactical-green);
+}
+
+.operation-status.planning {
+  color: var(--tactical-amber);
+}
+
+.operation-status.completed {
+  color: var(--tactical-blue);
+}
+
+.operation-status.warning {
+  color: var(--tactical-amber);
+}
+
+.operation-status.critical {
+  color: var(--tactical-red);
+}
+
+.progress-bar {
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 0.25rem;
+  overflow: hidden;
+  height: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--tactical-green-dark), var(--tactical-green));
+  transition: width 0.3s ease;
+}
+
+.agent-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.25rem;
+  margin-bottom: 0.5rem;
+  transition: all 0.3s ease;
+}
+
+.agent-item:hover {
+  border-color: var(--tactical-green);
+  background: rgba(0, 255, 65, 0.05);
+}
+
+.agent-status-indicator {
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 50%;
+  margin-right: 0.5rem;
+}
+
+.agent-status-indicator.operational {
+  background: var(--tactical-green);
+  box-shadow: 0 0 10px var(--tactical-green);
+}
+
+.agent-status-indicator.warning {
+  background: var(--tactical-amber);
+  box-shadow: 0 0 10px var(--tactical-amber);
+}
+
+.agent-status-indicator.critical {
+  background: var(--tactical-red);
+  box-shadow: 0 0 10px var(--tactical-red);
+}
+
+.mission-result {
+  background: rgba(0, 255, 65, 0.1);
+  border: 1px solid var(--tactical-green);
+  border-radius: 0.5rem;
+  padding: 1.5rem;
+  margin-top: 1rem;
+  animation: fadeIn 0.5s ease-in;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.success-badge {
+  background: var(--tactical-green);
+  color: #000;
+  padding: 0.25rem 0.75rem;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.ai-processing {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 0.5rem;
+  margin-top: 1rem;
+}
+
+.ai-processing .spinner {
+  width: 2rem;
+  height: 2rem;
+  border: 2px solid rgba(0, 255, 65, 0.3);
+  border-top: 2px solid var(--tactical-green);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-right: 1rem;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.system-metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.metric-card {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0.25rem;
+  padding: 1rem;
+  text-align: center;
+  transition: all 0.3s ease;
+}
+
+.metric-card:hover {
+  border-color: var(--tactical-green);
+  background: rgba(0, 255, 65, 0.05);
+}
+
+.metric-value {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: var(--tactical-green);
+  margin-bottom: 0.25rem;
+}
+
+.metric-label {
+  font-size: 0.75rem;
+  color: var(--dark-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .tactical-header {
+    padding: 0.75rem;
+  }
+  
+  .tactical-logo {
+    font-size: 1.25rem;
+  }
+  
+  .mission-interface {
+    margin: 1rem;
+  }
+  
+  .system-metrics {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--dark-bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--tactical-green);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--tactical-green-dark);
+}
+
+/* Selection styling */
+::selection {
+  background: rgba(0, 255, 65, 0.3);
+  color: var(--dark-text);
+}
+
