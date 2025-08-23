@@ -1,13 +1,5 @@
 import React from 'react';
-import CommandCenter from './components/CommandCenter';
-import './App.css';
 
-function App() {
-  return (
-    <div className="App">
-      <CommandCenter />
-    </div>
-  );
+export default function App() {
+  return <h1>Hello Agentcy-One!</h1>;
 }
-
-export default App;

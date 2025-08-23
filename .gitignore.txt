@@ -1,0 +1,17 @@
+{
+  "name": "autopromptr-electron",
+  "version": "1.0.0",
+  "main": "main.js",
+  "scripts": {
+    "start": "vite",
+    "build": "vite build"
+  },
+  "dependencies": {
+    "electron": "^26.2.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.0.0",
+    "typescript": "^5.0.4",
+    "vite": "^4.2.1"
+  }
+}
